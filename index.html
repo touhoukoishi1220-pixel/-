@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>アクションボード</title>
+<style>
+  :root {
+    --bg: #0d0d12;
+    --surface: #161620;
+    --surface2: #1e1e2e;
+    --border: #2a2a3e;
+    --accent: #7f5af0;
+    --accent2: #e94560;
+    --accent3: #2cb67d;
+    --text: #fffffe;
+    --muted: #94a1b2;
+    --hit-color: #e94560;
+    --special-color: #7f5af0;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 16px 32px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    padding: 16px 0 20px;
+    position: relative;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  header .subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+  }
+
+  .header-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin-top: 14px;
+  }
+
+  /* phase sections */
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .phase-icon-wrap {
+    position: relative;
+  }
+
+  .phase-icon {
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .phase-icon:active { transform: scale(0.93); }
+  .phase-icon:hover { border-color: var(--accent); }
+
+  .edit-hint {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+  }
+
+  .phase-name {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  /* icon picker */
+  .icon-picker {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 200px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .icon-picker.open { display: flex; }
+
+  .icon-opt {
+    font-size: 22px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .icon-opt:active { background: var(--border); transform: scale(0.9); }
+
+  /* action buttons */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-action {
+    flex: 1;
+    height: 52px;
+    font-size: 18px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.12s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-action::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+
+  .btn-action:active {
+    transform: scale(0.94);
+    border-color: var(--accent);
+  }
+
+  .btn-action:active::after { opacity: 0.15; }
+
+  /* result area */
+  .result-area {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    margin-top: 4px;
+    flex: 1;
+  }
+
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: 700;
+  }
+
+  #result {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    min-height: 52px;
+    word-break: break-all;
+  }
+
+  #result .empty {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .result-line {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .result-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .step-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    min-width: 20px;
+    text-align: right;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    flex: 1;
+  }
+
+  .tag.hit {
+    background: rgba(233,69,96,0.15);
+    border-color: var(--hit-color);
+    border-width: 2px;
+    color: var(--hit-color);
+        animation: pulse-hit 0.4s ease;
+  }
+
+  .tag.special {
+    background: rgba(127,90,240,0.15);
+    border-color: var(--special-color);
+    border-width: 2px;
+    color: var(--special-color);
+        animation: pulse-special 0.4s ease;
+  }
+
+  .tag.swap {
+    background: rgba(44,182,125,0.12);
+    border-color: var(--accent3);
+    color: var(--accent3);
+      }
+
+  .arrow-down {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    padding-left: 30px;
+  }
+
+  @keyframes pulse-hit {
+    0% { transform: scale(0.95); opacity: 0.5; }
+    60% { transform: scale(1.03); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes pulse-special {
+    0% { transform: scale(0.95); opacity: 0.5; }
+    60% { transform: scale(1.03); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-step {
+    animation: fadein 0.2s ease both;
+  }
+
+  /* active phase indicator */
+  .phase.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ アクションボード</h1>
+  <p class="subtitle">ATTACK · BIND · STOP</p>
+  <div class="header-line"></div>
+</header>
+
+<!-- ATTACK -->
+<div class="phase" id="phase-attack">
+  <div class="phase-header">
+    <div class="phase-icon-wrap">
+      <div class="phase-icon" id="icon-attack" onclick="togglePicker('attack')">⚔️</div>
+      <p class="edit-hint">タップで変更</p>
+      <div class="icon-picker" id="picker-attack"></div>
+    </div>
+    <div class="phase-name">アタック</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-action" onclick="doAction('attack',1)">1</button>
+    <button class="btn-action" onclick="doAction('attack',2)">2</button>
+    <button class="btn-action" onclick="doAction('attack',3)">3</button>
+  </div>
+</div>
+
+<!-- BIND -->
+<div class="phase" id="phase-bind">
+  <div class="phase-header">
+    <div class="phase-icon-wrap">
+      <div class="phase-icon" id="icon-bind" onclick="togglePicker('bind')">🔗</div>
+      <p class="edit-hint">タップで変更</p>
+      <div class="icon-picker" id="picker-bind"></div>
+    </div>
+    <div class="phase-name">バインド</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-action" onclick="doAction('bind',1)">1</button>
+    <button class="btn-action" onclick="doAction('bind',2)">2</button>
+    <button class="btn-action" onclick="doAction('bind',3)">3</button>
+  </div>
+</div>
+
+<!-- STOP -->
+<div class="phase" id="phase-stop">
+  <div class="phase-header">
+    <div class="phase-icon-wrap">
+      <div class="phase-icon" id="icon-stop" onclick="togglePicker('stop')">🛑</div>
+      <p class="edit-hint">タップで変更</p>
+      <div class="icon-picker" id="picker-stop"></div>
+    </div>
+    <div class="phase-name">ストップ</div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-action" onclick="doAction('stop',1)">1</button>
+    <button class="btn-action" onclick="doAction('stop',2)">2</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-area">
+  <div class="result-label">▶ あなたの動き</div>
+  <div id="result"><span class="empty">上のボタンを押してください</span></div>
+</div>
+
+<script>
+const ICONS = ['⚔️','🔗','🛑','💥','🌀','🔥','❄️','⚡','🌊','🎯','👊','🗡️','🛡️','💫','🌪️','🔮','🌟','🎪','🦴','🐉','🪄','☠️','🧨','🎭','🔱'];
+
+const actions = {
+  attack: {
+    1: [
+      {text:'1回目',type:'normal'},
+      {text:'2回目',type:'normal'},
+      {text:'ビンタ',type:'hit'},
+      {text:'3回目',type:'normal'}
+    ],
+    2: [
+      {text:'2回目',type:'normal'},
+      {text:'ビンタ',type:'hit'},
+      {text:'3回目',type:'normal'},
+      {text:'4回目',type:'normal'}
+    ],
+    3: [
+      {text:'3回目',type:'normal'},
+      {text:'4回目',type:'normal'},
+      {text:'5回目',type:'normal'}
+    ]
+  },
+  bind: {
+    1: [
+      {text:'アタック1と交代',type:'swap'},
+      {text:'4回目',type:'normal'},
+      {text:'5回目',type:'normal'},
+      {text:'ぼくちん',type:'special'},
+      {text:'6回目',type:'normal'}
+    ],
+    2: [
+      {text:'アタック2と交代',type:'swap'},
+      {text:'5回目',type:'normal'},
+      {text:'ぼくちん',type:'special'},
+      {text:'6回目',type:'normal'},
+      {text:'7回目',type:'normal'}
+    ],
+    3: [
+      {text:'ぼくちん',type:'special'},
+      {text:'6回目',type:'normal'},
+      {text:'7回目',type:'normal'},
+      {text:'8回目',type:'normal'}
+    ]
+  },
+  stop: {
+    1: [
+      {text:'バインド1と交代',type:'swap'},
+      {text:'7回目',type:'normal'},
+      {text:'8回目',type:'normal'},
+      {text:'ビンタ',type:'hit'},
+      {text:'9回目',type:'normal'}
+    ],
+    2: [
+      {text:'バインド2と交代',type:'swap'},
+      {text:'8回目',type:'normal'},
+      {text:'9回目',type:'normal'},
+      {text:'10回目 + ビンタ',type:'hit'}
+    ]
+  }
+};
+
+function doAction(phase, num) {
+  const list = actions[phase][num];
+  const box = document.getElementById('result');
+
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById('phase-' + phase).classList.add('active');
+
+  let html = '<div class="result-line">';
+  list.forEach((item, i) => {
+    if (i > 0) html += `<div class="arrow-down" style="animation-delay:${i*0.07}s">↓</div>`;
+    html += `<div class="result-step" style="animation-delay:${i*0.07}s">
+      <span class="step-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="tag ${item.type}">${item.text}</span>
+    </div>`;
+  });
+  html += '</div>';
+  box.innerHTML = html;
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+['attack','bind','stop'].forEach(phase => {
+  const picker = document.getElementById('picker-' + phase);
+  ICONS.forEach(icon => {
+    const btn = document.createElement('span');
+    btn.className = 'icon-opt';
+    btn.textContent = icon;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById('icon-' + phase).textContent = icon;
+      picker.classList.remove('open');
+    };
+    picker.appendChild(btn);
+  });
+});
+
+function togglePicker(phase) {
+  const picker = document.getElementById('picker-' + phase);
+  const isOpen = picker.classList.contains('open');
+  document.querySelectorAll('.icon-picker').forEach(p => p.classList.remove('open'));
+  if (!isOpen) picker.classList.add('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.phase-icon-wrap')) {
+    document.querySelectorAll('.icon-picker').forEach(p => p.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>
